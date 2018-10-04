@@ -56,6 +56,7 @@ defmodule Grapple.Mixfile do
     [
       {:httpoison, "~> 1.0"},
       {:gen_stage, "~> 0.4"},
+      {:jason, "~> 1.1"},
       {:ex_doc, "~> 0.13", only: :dev}
     ]
   end

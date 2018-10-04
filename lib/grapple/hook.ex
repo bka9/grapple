@@ -7,6 +7,7 @@ defmodule Grapple.Hook do
   @enforce_keys [:url]
   defstruct [
     :url,
+    :api_key,
     :owner,
     :life,
     :ref,
@@ -123,12 +124,23 @@ defmodule Grapple.Hook do
     @http.get(hook.url, hook.headers, hook.options)
   end
 
-  defp notify(hook = %Grapple.Hook{method: "POST"}, body) do
+  defp notify(hook = %Grapple.Hook{method: "POST", api_key: api_key}, body) when is_nil(api_key) do
     @http.post(hook.url, body, hook.headers, hook.options)
   end
+  
+  defp notify(hook = %Grapple.Hook{method: "POST", api_key: api_key}, body) do
+    auth_header = :crypto.hmac(:sha256, api_key, Jason.encode!(body))
+                  |> Base.encode64()
+    @http.post(hook.url, body, hook.headers ++ [{"Authorization", "Bearer #{auth_header}"}], hook.options)
+  end
 
-  defp notify(hook = %Grapple.Hook{method: "PUT"}, body) do
+  defp notify(hook = %Grapple.Hook{method: "PUT", api_key: api_key}, body) when is_nil(api_key) do
     @http.put(hook.url, body, hook.headers, hook.options)
+  end
+  defp notify(hook = %Grapple.Hook{method: "POST", api_key: api_key}, body) do
+    auth_header = :crypto.hmac(:sha256, api_key, Jason.encode!(body))
+                  |> Base.encode64()
+    @http.put(hook.url, body, hook.headers ++ [{"Authorization", "Bearer #{auth_header}"}], hook.options)
   end
 
   defp notify(hook = %Grapple.Hook{method: "DELETE"}, _body) do
